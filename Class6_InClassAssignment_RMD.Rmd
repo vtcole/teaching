@@ -1,0 +1,173 @@
+---
+title: "Class 5 In-Class Assignment"
+author: "HBEH 762"
+date: "September 28, 2018"
+output: word_document
+---
+
+#Random intercepts model
+We first fit a random intercepts model, testing the Level-1 effects of *sex* and *group-mean centered importance of relative performance* on *intrinsic motivation*
+
+Here are the Level 1 and Level 2 equations:
+##Level 1:
+$intrinsic_{ij} = \beta_{0j} + \beta_{1j}sex_{ij} + \beta_{2j}relperf_{ij} + r_{ij}$
+$r_{ij}\sim N\left(0,\sigma^2\right)$
+##Level 2:
+$\beta_{0j} = \gamma_{00} + u_{0j}$
+$\beta_{1j} = \gamma_{10}$
+$\beta_{2j} = \gamma_{20}$
+$u_{0j}\sim N\left(0, \tau_{00}\right)$
+
+```{r, engine="sas", engine.path="C:/Program Files/SASHome/SASFoundation/9.3/sas.exe",echo=FALSE}
+
+libname motiv 'C:\Users\vcole\Dropbox\teaching';
+
+data motiv;
+set motiv.motivation;
+run;
+
+proc sort data=motiv;
+by classid;
+run;
+
+proc means data=motiv noprint;
+by classid;
+var relperf GoalStrct;
+output out=classmean  mean=relperf_class goalstrct;
+run;
+
+proc print data=classmean;
+run;
+/*calculating the grand mean*/
+proc means data=classmean;
+var relperf_class GoalStrct ;
+run;
+data classmean;
+set classmean;
+drop _TYPE_ _FREQ_; /*extra variables created in last step*/
+relperf_class_grdmc=relperf_class-3.1690349; /*subtracting the grand mean*/
+goalstrct_grdmc=goalstrct-2.8851064; /*subtracting the grand mean*/
+run;
+
+/*merge class means with original data*/
+data motiv;
+merge motiv classmean;
+by classid;
+run;
+
+/*group-mean-center relperf*/
+data motiv;
+set motiv;
+relperf_grpmn=relperf-relperf_class; /*subtract the un-centered class mean*/
+run;
+
+proc mixed data=motiv method=ml covtest;
+class classid;
+model intrinsic=sex relperf_grpmn relperf_class_grdmc goalstrct_grdmc/s;
+random intercept/subject=classid ;
+run;
+```
+
+#Random slopes model
+```{r, engine="sas", engine.path="C:/Program Files/SASHome/SASFoundation/9.3/sas.exe",echo=FALSE}
+
+libname motiv 'C:\Users\vcole\Dropbox\teaching';
+
+data motiv;
+set motiv.motivation;
+run;
+
+proc sort data=motiv;
+by classid;
+run;
+
+proc means data=motiv noprint;
+by classid;
+var relperf GoalStrct;
+output out=classmean  mean=relperf_class goalstrct;
+run;
+
+proc print data=classmean;
+run;
+/*calculating the grand mean*/
+proc means data=classmean;
+var relperf_class GoalStrct ;
+run;
+data classmean;
+set classmean;
+drop _TYPE_ _FREQ_; /*extra variables created in last step*/
+relperf_class_grdmc=relperf_class-3.1690349; /*subtracting the grand mean*/
+goalstrct_grdmc=goalstrct-2.8851064; /*subtracting the grand mean*/
+run;
+
+/*merge class means with original data*/
+data motiv;
+merge motiv classmean;
+by classid;
+run;
+
+/*group-mean-center relperf*/
+data motiv;
+set motiv;
+relperf_grpmn=relperf-relperf_class; /*subtract the un-centered class mean*/
+run;
+
+proc mixed data=motiv method=ml covtest;
+class classid;
+model intrinsic=sex relperf_grpmn relperf_class_grdmc goalstrct_grdmc/s;
+random intercept relperf_grpmn/subject=classid type=un s;
+run;
+```
+
+
+#Slopes-as-outcomes model
+```{r, engine="sas", engine.path="C:/Program Files/SASHome/SASFoundation/9.3/sas.exe",echo=FALSE}
+
+libname motiv 'C:\Users\vcole\Dropbox\teaching';
+
+data motiv;
+set motiv.motivation;
+run;
+
+proc sort data=motiv;
+by classid;
+run;
+
+proc means data=motiv noprint;
+by classid;
+var relperf GoalStrct;
+output out=classmean  mean=relperf_class goalstrct;
+run;
+
+proc print data=classmean;
+run;
+/*calculating the grand mean*/
+proc means data=classmean;
+var relperf_class GoalStrct ;
+run;
+data classmean;
+set classmean;
+drop _TYPE_ _FREQ_; /*extra variables created in last step*/
+relperf_class_grdmc=relperf_class-3.1690349; /*subtracting the grand mean*/
+goalstrct_grdmc=goalstrct-2.8851064; /*subtracting the grand mean*/
+run;
+
+/*merge class means with original data*/
+data motiv;
+merge motiv classmean;
+by classid;
+run;
+
+/*group-mean-center relperf*/
+data motiv;
+set motiv;
+relperf_grpmn=relperf-relperf_class; /*subtract the un-centered class mean*/
+run;
+
+proc mixed data=motiv method=ml covtest;
+class classid;
+model intrinsic=sex relperf_grpmn relperf_class_grdmc goalstrct_grdmc goalstrct*relperf_grpmn/s;
+random intercept relperf_grpmn/subject=classid type=un ;
+run;
+```
+
